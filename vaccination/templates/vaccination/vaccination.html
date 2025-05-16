@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vacinação - FalaUBS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+    <h1 class="text-2xl font-bold mb-6">Calendário de Vacinação</h1>
+    <div class="bg-white p-4 rounded shadow max-w-lg">
+        <input type="text" placeholder="Buscar vacina..." class="w-full p-2 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <ul>
+            {% for vaccine in vaccines %}
+            <li class="border-b py-2">
+                <h2 class="font-semibold">{{ vaccine.name }}</h2>
+                <p>{{ vaccine.description }}</p>
+                <p class="text-sm text-gray-500">Faixa etária: {{ vaccine.age_group }}</p>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>
