@@ -1,0 +1,87 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vacinação - FalaUBS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Top Bar -->
+    <header class="w-full bg-blue-700 text-white flex items-center justify-between px-4 py-3">
+        <div class="flex items-center space-x-2">
+            <h1 class="text-lg font-semibold flex items-center space-x-2">
+                <img src="{% static 'icons/Icon_ubs.png' %}" alt="UBS Icon" class="h-6" />
+                <span>Bem-vindo ao FalaUBS</span>
+            </h1>
+        </div>
+        <button aria-label="Menu" class="focus:outline-none">
+            <img src="{% static 'icons/Icon_menu_white.png' %}" alt="Menu Icon" class="h-8" />
+        </button>
+    </header>
+    <div class="max-w-5xl mx-auto p-4">
+        <!-- Back Button and Title -->
+        <div class="flex items-center mb-6 space-x-4">
+            <button aria-label="Back" onclick="window.history.back()" class="focus:outline-none">
+                <img src="{% static 'icons/Icon_return.png' %}" alt="Back Icon" class="w-6 h-6" />
+            </button>
+            <h2 class="text-2xl font-semibold flex-1">Vacinação</h2>
+        </div>
+        <!-- Search Bar -->
+        <div class="relative mb-6">
+            <input id="searchInput" type="text" placeholder="Pesquisar Vacinas" class="w-full p-3 rounded-lg border border-blue-600 border-opacity-75 bg-gray-300 bg-opacity-60 text-black focus:outline-none focus:ring-2 focus:ring-blue-500 pl-12 pr-12" />
+            <img src="{% static 'icons/Icon_search.png' %}" alt="Search Icon" class="w-5 h-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-black pointer-events-none" />
+            <button class="absolute right-4 top-1/2 transform -translate-y-1/2 focus:outline-none">
+                <img src="{% static 'icons/Icon_microphone.png' %}" alt="Microphone Icon" class="w-5 h-5 text-black" />
+            </button>
+        </div>
+        <!-- Toggle Buttons -->
+        <div class="flex space-x-4 mb-6 border-b border-gray-300">
+            <button id="highlightsBtn" class="flex-1 py-2 text-blue-600 border-b-2 border-blue-600 font-semibold focus:outline-none bg-white">Destaques</button>
+            <button id="categoriesBtn" class="flex-1 py-2 text-black font-semibold focus:outline-none bg-gray-200">Categorias</button>
+        </div>
+        <!-- Vaccine List -->
+        <div id="vaccineList" class="space-y-4 overflow-y-auto max-h-[60vh] scrollbar-hide">
+            <!-- Vaccine items will be rendered here -->
+        </div>
+    </div>
+
+    <script>
+        // Mock vaccine data
+        const vaccines = [
+            { name: "BCG", description: "Protege contra tuberculose." },
+            { name: "Hepatite B", description: "Previne a hepatite B." },
+            { name: "Febre Amarela", description: "Protege contra febre amarela." },
+            { name: "DTP", description: "Previne difteria, tétano e coqueluche." },
+            { name: "Poliomielite", description: "Previne poliomielite." },
+            { name: "Hepatite A", description: "Previne a hepatite A." },
+            { name: "Tríplice Viral", description: "Previne sarampo, caxumba e rubéola." },
+            { name: "HPV", description: "Previne o papilomavírus humano." },
+            { name: "Meningocócica", description: "Previne meningite meningocócica." },
+            { name: "Varicela", description: "Previne catapora." }
+        ];
+
+        const vaccineList = document.getElementById('vaccineList');
+
+        function renderVaccines(list) {
+            vaccineList.innerHTML = '';
+            list.forEach(vaccine => {
+                const item = document.createElement('div');
+                item.className = 'bg-white rounded-2xl shadow p-4 flex justify-between items-center cursor-pointer hover:shadow-lg transition-shadow';
+                item.innerHTML = `
+                    <div>
+                        <h3 class="text-xl font-bold">Vaccine against ${vaccine.name}</h3>
+                        <p class="text-gray-700">${vaccine.description}</p>
+                    </div>
+                    <img src="{% static 'icons/Icon_forward.png' %}" alt="Forward Icon" class="w-6 h-6 text-gray-400" />
+                `;
+                vaccineList.appendChild(item);
+            });
+        }
+
+        // Initial render
+        renderVaccines(vaccines);
+    </script>
+</body>
+</html>
