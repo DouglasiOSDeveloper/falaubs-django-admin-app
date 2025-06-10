@@ -150,9 +150,15 @@
                     </div>
                 </div>
                 <div class="expanded-view hidden mt-2 text-gray-700 relative">
-                    <button aria-label="Collapse" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 focus:outline-none" onclick="toggleExpand(this)">
-                        <img src="{% static 'icons/Icon_minimize.png' %}" alt="Collapse Icon" class="w-6 h-6" />
-                    </button>
+                    <div class="absolute top-2 right-2 flex items-center space-x-2">
+                        <a href="/vaccination/ubs/{{ ubs.name|urlencode }}/" class="bg-[#2563EB] text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-md flex items-center space-x-2">
+                            <img src="{% static 'icons/Icon_forward.png' %}" alt="Visit" class="w-4 h-4 invert" />
+                            <span>Visitar</span>
+                        </a>
+                        <button aria-label="Collapse" class="text-gray-500 hover:text-gray-700 focus:outline-none" onclick="toggleExpand(this)">
+                            <img src="{% static 'icons/Icon_minimize.png' %}" alt="Collapse Icon" class="w-6 h-6" />
+                        </button>
+                    </div>
                     <h2 class="text-3xl font-bold mb-2">{{ ubs.name }}</h2>
                     <div class="mb-2 flex items-center space-x-2">
                         <img src="{% static 'icons/Icon_address.png' %}" alt="Address Icon" class="w-5 h-5" />

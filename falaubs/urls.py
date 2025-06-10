@@ -17,20 +17,25 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 from users import views as user_views
+from vaccination import views as vaccination_views
 
 urlpatterns = [
+    # Core routes
     path('admin/', admin.site.urls),
     path('', user_views.home_view, name='home'),
     path('login/', user_views.login_view, name='login'),
+    
+    # Main routes
+    path('vaccination/', include('vaccination.urls', namespace='vaccination')),
+    
+    # API routes
     path('api/users/', include('users.urls')),
     path('api/scheduling/', include('scheduling.urls')),
-    path('api/vaccination/', include('vaccination.urls')),
     path('api/chat/', include('chat.urls')),
-    # Commenting out notifications app URLs due to missing views
-    # path('api/notifications/', include('notifications.urls')),
-    # Commenting out administration app URLs due to missing views
-    # path('api/administration/', include('administration.urls')),
-    # Commenting out reports app URLs due to missing views
-    # path('api/reports/', include('reports.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

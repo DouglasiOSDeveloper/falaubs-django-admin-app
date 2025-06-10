@@ -4,14 +4,487 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Agendamento - FalaUBS</title>
+    {% load static %}
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .tab-active {
+            @apply bg-black text-white font-bold;
+        }
+        .tab-inactive {
+            @apply bg-white text-black border border-gray-300;
+        }
+        .schedule-btn {
+            background-color: #174D8D;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen p-6">
-    <h1 class="text-2xl font-bold mb-6">Agendamento de Consultas e Exames</h1>
-    <ol class="list-decimal list-inside space-y-2 bg-white p-6 rounded shadow max-w-md">
-        {% for step in steps %}
-        <li class="p-2 border rounded hover:bg-blue-50 cursor-pointer">{{ step }}</li>
-        {% endfor %}
-    </ol>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Top Bar -->
+    <header class="w-full bg-blue-700 text-white flex items-center justify-between px-4 py-3">
+        <div class="flex items-center space-x-2">
+            <h1 class="text-lg font-semibold flex items-center space-x-2">
+<img src="{% static "icons/Icon_ubs.png" %}" alt="UBS Icon" class="h-6" />
+                <span>Bem-vindo ao FalaUBS</span>
+            </h1>
+        </div>
+        <button aria-label="Menu" class="focus:outline-none">
+<img src="{% static "icons/Icon_menu_white.png" %}" alt="Menu Icon" class="h-8" />
+        </button>
+    </header>
+
+    <div class="max-w-4xl mx-auto p-4">
+        <!-- Back Button and Title -->
+        <div class="flex items-center mb-6 space-x-4">
+            <button aria-label="Back" onclick="window.history.back()" class="focus:outline-none">
+<img src="{% static "icons/Icon_return.png" %}" alt="Back Icon" class="w-6 h-6" />
+            </button>
+            <h2 class="text-2xl font-semibold">Agendamento</h2>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex space-x-2 mb-6">
+            <button id="consultaTab" class="flex-1 py-2 px-4 rounded-lg tab-active" onclick="switchTab('consulta')">
+                Consulta
+            </button>
+            <button id="exameTab" class="flex-1 py-2 px-4 rounded-lg tab-inactive" onclick="switchTab('exame')">
+                Exame
+            </button>
+        </div>
+
+        <!-- Form Content -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <form id="schedulingForm" class="space-y-6">
+                <!-- Specialty Selector (for Exame) -->
+                <div id="specialtySection" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Especialidade
+                    </label>
+                    <select id="specialty" class="w-full p-2 border border-gray-300 rounded-md">
+                        <option value="">Selecione uma especialidade</option>
+                    </select>
+                </div>
+
+                <!-- Vaccine Selector (for Vacinação) -->
+                <div id="vaccineSection" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Vacina
+                    </label>
+                    <select id="vaccine" class="w-full p-2 border border-gray-300 rounded-md">
+                        <option value="">Selecione uma vacina</option>
+                    </select>
+                </div>
+
+                <!-- UBS Selector -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Unidade de Saúde (UBS)
+                    </label>
+                    <select id="ubs" class="w-full p-2 border border-gray-300 rounded-md">
+                        <option value="">Selecione uma UBS</option>
+                    </select>
+                </div>
+
+                <!-- Date and Time -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Data
+                        </label>
+                        <input type="date" id="date" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Horário
+                        </label>
+                        <select id="time" class="w-full p-2 border border-gray-300 rounded-md" disabled>
+                            <option value="">Selecione um horário</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Confirmation Section -->
+                <div class="mt-8 p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-4">Confirmação</h3>
+                    <div class="space-y-2">
+                        <p><strong>Nome:</strong> <span id="userName">{{ user_data.name }}</span></p>
+                        <p><strong>CPF:</strong> <span id="userCPF">{{ user_data.cpf }}</span></p>
+                        <p><strong>Tipo:</strong> <span id="appointmentType">Consulta</span></p>
+                        <p id="specialtyConfirm" class="hidden"><strong>Especialidade:</strong> <span id="specialtyValue">-</span></p>
+                        <p id="vaccineConfirm" class="hidden"><strong>Vacina:</strong> <span id="vaccineValue">-</span></p>
+                        <p><strong>UBS:</strong> <span id="ubsValue">-</span></p>
+                        <p><strong>Data:</strong> <span id="dateValue">-</span></p>
+                        <p><strong>Horário:</strong> <span id="timeValue">-</span></p>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-3 px-4 text-white font-semibold rounded-lg schedule-btn hover:opacity-90 transition-opacity">
+                    Agendar
+                </button>
+            </form>
+        </div>
+    </div>
+
+            <script>
+        // Store UBS data from Django context
+        const ubsData = JSON.parse('{{ ubs_data|escapejs }}');
+        let currentTab = 'consulta';
+
+        function switchTab(tab, force = false) {
+            if (!force && currentTab === tab) {
+                // If the tab is the same and not forced, do nothing
+                return;
+            }
+
+            // Update tab styles
+            document.getElementById('consultaTab').classList.toggle('tab-active', tab === 'consulta');
+            document.getElementById('consultaTab').classList.toggle('tab-inactive', tab !== 'consulta');
+            document.getElementById('exameTab').classList.toggle('tab-active', tab === 'exame');
+            document.getElementById('exameTab').classList.toggle('tab-inactive', tab !== 'exame');
+
+            // Clear all form fields and confirmation values when switching tabs except UBS to fix initial load issue
+            try {
+                document.getElementById('specialty').value = "";
+                document.getElementById('vaccine').value = "";
+                document.getElementById('date').value = "";
+                document.getElementById('time').value = "";
+
+                document.getElementById('specialtyValue').textContent = "-";
+                document.getElementById('vaccineValue').textContent = "-";
+                document.getElementById('dateValue').textContent = "-";
+                document.getElementById('timeValue').textContent = "-";
+            } catch (e) {
+                console.error("Error clearing form fields on tab switch:", e);
+            }
+
+            // Show/hide sections based on tab
+            document.getElementById('specialtySection').style.display = tab === 'exame' ? 'block' : 'none';
+
+            // Show vaccineSection only in Exame tab when specialty is Vacinação and UBS offers vaccines
+            if (tab === 'exame') {
+                const specialty = document.getElementById('specialty').value;
+                const ubsName = document.getElementById('ubs').value;
+                const ubs = ubsData.ubsList.find(u => u.name === ubsName);
+                if (specialty === 'Vacinação' && ubs && ubs.vaccines.length > 0) {
+                    document.getElementById('vaccineSection').style.display = 'block';
+                    document.getElementById('vaccineConfirm').style.display = 'block';
+                } else {
+                    document.getElementById('vaccineSection').style.display = 'none';
+                    document.getElementById('vaccineConfirm').style.display = 'none';
+                }
+            } else {
+                document.getElementById('vaccineSection').style.display = 'none';
+                document.getElementById('vaccineConfirm').style.display = 'none';
+            }
+
+            // Update appointment type in confirmation
+            const types = {
+                consulta: 'Consulta',
+                exame: 'Exame'
+            };
+            document.getElementById('appointmentType').textContent = types[tab];
+
+            currentTab = tab;
+            updateUBSOptions();
+            updateTimeSlots();
+        }
+
+        function updateUBSOptions() {
+            const ubsSelect = document.getElementById('ubs');
+            // Preserve the currently selected UBS value
+            const selectedValue = ubsSelect.value;
+            ubsSelect.innerHTML = '<option value="">Selecione uma UBS</option>';
+
+            const specialty = document.getElementById('specialty').value;
+            const vaccine = document.getElementById('vaccine').value;
+
+            ubsData.ubsList.forEach(ubs => {
+                let shouldShow = true;
+
+                if (currentTab === 'exame' && specialty) {
+                    shouldShow = ubs.services.includes(specialty);
+                } else if (currentTab === 'exame' && specialty === 'Vacinação' && vaccine) {
+                    shouldShow = ubs.vaccines.includes(vaccine);
+                }
+
+                if (shouldShow) {
+                    const option = document.createElement('option');
+                    option.value = ubs.name;
+                    option.textContent = ubs.name;
+                    ubsSelect.appendChild(option);
+                }
+            });
+
+            // Restore the selected UBS value if it still exists
+            if ([...ubsSelect.options].some(option => option.value === selectedValue)) {
+                ubsSelect.value = selectedValue;
+            } else {
+                ubsSelect.value = "";
+            }
+        }
+
+        function updateTimeSlots() {
+            let ubsName = document.getElementById('ubs').value;
+            const timeSelect = document.getElementById('time');
+            timeSelect.innerHTML = '<option value="">Selecione um horário</option>';
+
+            // Normalize UBS name by trimming whitespace
+            ubsName = ubsName.trim();
+
+            const ubs = ubsData.ubsList.find(u => u.name.trim() === ubsName);
+
+            if (!ubs) {
+                console.error('UBS not found for name:', ubsName);
+                // Always enable timeSelect even if UBS not found to avoid locked dropdown
+                timeSelect.disabled = false;
+                return;
+            }
+ 
+            if (!ubs.hours) {
+                console.error('UBS hours not defined for:', ubsName);
+                // Always enable timeSelect even if hours not defined
+                timeSelect.disabled = false;
+                return;
+            }
+ 
+            timeSelect.disabled = false;
+            const [openTime, closeTime] = ubs.hours.split(' - ');
+            const [openHour, openMinute] = openTime.split(':').map(Number);
+            const [closeHour, closeMinute] = closeTime.split(':').map(Number);
+
+            // Calculate the last available hour (cannot pass close time)
+            let lastHour = closeHour;
+            if (closeMinute > 0) {
+                lastHour = closeHour; // last hour is closeHour if closeMinute > 0
+            } else {
+                lastHour = closeHour - 1; // last hour is one less if closeMinute == 0
+            }
+
+            for (let hour = openHour; hour <= lastHour; hour++) {
+                const timeStr = hour.toString().padStart(2, "0") + ":00";
+                const option = document.createElement("option");
+                option.value = timeStr;
+                option.textContent = timeStr;
+                timeSelect.appendChild(option);
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('specialty').addEventListener('change', () => {
+            updateUBSOptions();
+            document.getElementById('specialtyValue').textContent = document.getElementById('specialty').value || '-';
+            // Update vaccine section visibility and time slots
+            // Do not call switchTab here to avoid clearing fields on tab switch
+            // switchTab(currentTab);
+        });
+
+        document.getElementById('vaccine').addEventListener('change', () => {
+            updateUBSOptions();
+            document.getElementById('vaccineValue').textContent = document.getElementById('vaccine').value || '-';
+            updateTimeSlots();
+        });
+
+        document.getElementById('ubs').addEventListener('change', () => {
+            // Only update specialty options if current tab is exame
+            if (currentTab === 'exame') {
+                updateSpecialtyOptions();
+            } else {
+                // If not exame tab, reset specialty options to all specialties
+                const specialtySelect = document.getElementById('specialty');
+                specialtySelect.innerHTML = '<option value="">Selecione uma especialidade</option>';
+                const specialtySet = new Set();
+                ubsData.ubsList.forEach(ubs => {
+                    ubs.services.forEach(service => specialtySet.add(service));
+                });
+                [...specialtySet].sort().forEach(specialty => {
+                    const option = document.createElement('option');
+                    option.value = specialty;
+                    option.textContent = specialty;
+                    specialtySelect.appendChild(option);
+                });
+            }
+            updateTimeSlots();
+            document.getElementById('ubsValue').textContent = document.getElementById('ubs').value || '-';
+            // Update vaccine section visibility
+            // Do not call switchTab here to avoid clearing fields on tab switch
+            // switchTab(currentTab);
+        });
+
+        // Add missing updateSpecialtyOptions function for bidirectional filtering
+        function updateSpecialtyOptions() {
+            const specialtySelect = document.getElementById('specialty');
+            const selectedUBSName = document.getElementById('ubs').value;
+
+            // Preserve the currently selected specialty value
+            const selectedSpecialty = specialtySelect.value;
+
+            // Clear specialty options except the default
+            specialtySelect.innerHTML = '<option value="">Selecione uma especialidade</option>';
+
+            if (!selectedUBSName) {
+                // If no UBS selected, populate all specialties from ubsData
+                const specialtySet = new Set();
+                ubsData.ubsList.forEach(ubs => {
+                    ubs.services.forEach(service => specialtySet.add(service));
+                });
+                [...specialtySet].sort().forEach(specialty => {
+                    const option = document.createElement('option');
+                    option.value = specialty;
+                    option.textContent = specialty;
+                    specialtySelect.appendChild(option);
+                });
+            } else {
+                // Filter specialties based on selected UBS
+                const ubs = ubsData.ubsList.find(u => u.name === selectedUBSName);
+                if (ubs) {
+                    ubs.services.forEach(service => {
+                        const option = document.createElement('option');
+                        option.value = service;
+                        option.textContent = service;
+                        specialtySelect.appendChild(option);
+                    });
+                }
+            }
+
+            // Restore previously selected specialty if still available
+            if ([...specialtySelect.options].some(option => option.value === selectedSpecialty)) {
+                specialtySelect.value = selectedSpecialty;
+            } else {
+                specialtySelect.value = "";
+            }
+
+            // Update confirmation specialty display
+            document.getElementById('specialtyValue').textContent = specialtySelect.value || '-';
+        }
+
+        // Fix initial UBS dropdown load issue by calling updateUBSOptions on DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', () => {
+            updateUBSOptions();
+            updateSpecialtyOptions();
+            updateTimeSlots();
+        });
+
+        // Adjust switchTab to avoid clearing UBS dropdown on initial load
+        function switchTab(tab) {
+            if (currentTab === tab) {
+                // If the tab is the same, do nothing
+                return;
+            }
+
+            // Update tab styles
+            document.getElementById('consultaTab').classList.toggle('tab-active', tab === 'consulta');
+            document.getElementById('consultaTab').classList.toggle('tab-inactive', tab !== 'consulta');
+            document.getElementById('exameTab').classList.toggle('tab-active', tab === 'exame');
+            document.getElementById('exameTab').classList.toggle('tab-inactive', tab !== 'exame');
+
+            // Clear all form fields and confirmation values when switching tabs
+            try {
+                document.getElementById('specialty').value = "";
+                document.getElementById('vaccine').value = "";
+                document.getElementById('ubs').value = "";
+                document.getElementById('date').value = "";
+                document.getElementById('time').value = "";
+
+                document.getElementById('specialtyValue').textContent = "-";
+                document.getElementById('vaccineValue').textContent = "-";
+                document.getElementById('ubsValue').textContent = "-";
+                document.getElementById('dateValue').textContent = "-";
+                document.getElementById('timeValue').textContent = "-";
+            } catch (e) {
+                console.error("Error clearing form fields on tab switch:", e);
+            }
+
+            // Show/hide sections based on tab
+            document.getElementById('specialtySection').style.display = tab === 'exame' ? 'block' : 'none';
+
+            // Show vaccineSection only in Exame tab when specialty is Vacinação and UBS offers vaccines
+            if (tab === 'exame') {
+                const specialty = document.getElementById('specialty').value;
+                const ubsName = document.getElementById('ubs').value;
+                const ubs = ubsData.ubsList.find(u => u.name === ubsName);
+                if (specialty === 'Vacinação' && ubs && ubs.vaccines.length > 0) {
+                    document.getElementById('vaccineSection').style.display = 'block';
+                    document.getElementById('vaccineConfirm').style.display = 'block';
+                } else {
+                    document.getElementById('vaccineSection').style.display = 'none';
+                    document.getElementById('vaccineConfirm').style.display = 'none';
+                }
+            } else {
+                document.getElementById('vaccineSection').style.display = 'none';
+                document.getElementById('vaccineConfirm').style.display = 'none';
+            }
+
+            // Update appointment type in confirmation
+            const types = {
+                consulta: 'Consulta',
+                exame: 'Exame'
+            };
+            document.getElementById('appointmentType').textContent = types[tab];
+
+            currentTab = tab;
+            updateUBSOptions();
+            updateTimeSlots();
+        }
+
+        document.getElementById('date').addEventListener('change', () => {
+            document.getElementById('dateValue').textContent = document.getElementById('date').value || '-';
+            updateTimeSlots();
+        });
+
+        document.getElementById('time').addEventListener('change', () => {
+            document.getElementById('timeValue').textContent = document.getElementById('time').value || '-';
+        });
+
+        document.getElementById('schedulingForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            // Here you would typically send the form data to the server
+            alert('Agendamento realizado com sucesso!');
+        });
+
+        // Initialize the page
+        // Call switchTab without early return to ensure initialization even if currentTab is 'consulta'
+        (function init() {
+            const tab = 'consulta';
+            // Update tab styles
+            document.getElementById('consultaTab').classList.add('tab-active');
+            document.getElementById('consultaTab').classList.remove('tab-inactive');
+            document.getElementById('exameTab').classList.add('tab-inactive');
+            document.getElementById('exameTab').classList.remove('tab-active');
+
+            // Show/hide sections based on tab
+            document.getElementById('specialtySection').style.display = 'none';
+            document.getElementById('vaccineSection').style.display = 'none';
+            document.getElementById('vaccineConfirm').style.display = 'none';
+
+            currentTab = tab;
+            updateUBSOptions();
+            updateTimeSlots();
+        })();
+
+        // Populate specialty and vaccine dropdowns from UBS data
+        const specialtySet = new Set();
+        const vaccineSet = new Set();
+
+        ubsData.ubsList.forEach(ubs => {
+            ubs.services.forEach(service => specialtySet.add(service));
+            ubs.vaccines.forEach(vaccine => vaccineSet.add(vaccine));
+        });
+
+        const specialtySelect = document.getElementById('specialty');
+        const vaccineSelect = document.getElementById('vaccine');
+
+        [...specialtySet].sort().forEach(specialty => {
+            const option = document.createElement('option');
+            option.value = specialty;
+            option.textContent = specialty;
+            specialtySelect.appendChild(option);
+        });
+
+        [...vaccineSet].sort().forEach(vaccine => {
+            const option = document.createElement('option');
+            option.value = vaccine;
+            option.textContent = vaccine;
+            vaccineSelect.appendChild(option);
+        });
+    </script>
 </body>
 </html>

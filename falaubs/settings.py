@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-x5p^l^)^kg4$#7id&iic4i+5i4ywg9=(%k8%vcw7v$6+ytsp_-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['6vnrmt-8000.csb.app', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['x73c6x-8000.csb.app', '6vnrmt-8000.csb.app', 'localhost', '127.0.0.1', '0.0.0.0']
 
 
 # Application definition
@@ -124,7 +124,16 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "/static/"
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "administration/static"),
+    os.path.join(BASE_DIR, "chat/static"),
+    os.path.join(BASE_DIR, "notifications/static"),
+    os.path.join(BASE_DIR, "reports/static"),
+    os.path.join(BASE_DIR, "scheduling/static"),
+    os.path.join(BASE_DIR, "users/static"),
+    os.path.join(BASE_DIR, "vaccination/static"),
+]
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")

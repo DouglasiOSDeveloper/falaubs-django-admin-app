@@ -1,10 +1,35 @@
+import os
+import json
+from django.http import JsonResponse, Http404
 from django.shortcuts import render
+from django.conf import settings
+from urllib.parse import unquote
 
-def vaccination_mock_view(request):
-    # Mock vaccine data
-    vaccines = [
-        {"name": "Vacina A", "description": "Descrição da Vacina A", "age_group": "0-5 anos"},
-        {"name": "Vacina B", "description": "Descrição da Vacina B", "age_group": "6-12 anos"},
-        {"name": "Vacina C", "description": "Descrição da Vacina C", "age_group": "Adultos"},
-    ]
-    return render(request, "vaccination/vaccination.html", {"vaccines": vaccines})
+def normalize_name(name):
+    """Normalize UBS name for matching."""
+    return name.lower().replace(' ', '').replace('-', '').replace('_', '').strip()
+
+def ubs_detail_view(request, ubs_name):
+    """View for displaying UBS details."""
+    # Load centralized UBS data from staticfiles directory (correct one)
+    json_path = os.path.join(settings.BASE_DIR, 'staticfiles', 'mock_data', 'ubs_data.json')
+    
+    try:
+        with open(json_path, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+    except FileNotFoundError:
+        raise Http404("UBS data not found")
+
+    # URL decode the UBS name and normalize it
+    decoded_name = unquote(ubs_name)
+    normalized_name = normalize_name(decoded_name)
+    
+    # Find UBS by normalized name
+    ubs = next((u for u in data['ubsList'] if normalize_name(u['name']) == normalized_name), None)
+    if not ubs:
+        raise Http404(f"UBS not found: {decoded_name}")
+
+    # Determine open/closed status (mocked as always open for now)
+    ubs['status'] = "Aberta"
+
+    return render(request, 'vaccination/ubs_detail.html', {'ubs': ubs})
