@@ -16,7 +16,7 @@ def scheduling_view(request):
     }
 
     context = {
-        "ubs_data": ubs_data,
+        "ubs_data": json.dumps(ubs_data),
         "user_data": user_data
     }
     
